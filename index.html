@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SE 16B | The Software Engineers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="overlay">
+    <header>
+      <h1>SE 16B | The Software Engineers</h1>
+      <p class="subtitle">Makeups, quizzes, deadlines and more</p>
+      <button id="logoutBtn" style="display: none;">Logout</button>
+    </header>
+
+    <!-- Login Section (for students to unlock admin access) -->
+    <section id="login-section">
+      <div class="login-box">
+        <h3>Admin Access</h3>
+        <p>Enter password to get admin access (For CR and GR only)</p>
+        <input type="password" id="adminPassword" placeholder="Admin password">
+        <button id="loginBtn">Login as Admin</button>
+      </div>
+    </section>
+
+    <!-- Admin Panel (hidden by default) -->
+    <section id="admin-panel" style="display: none;">
+      <h2>Add New Event</h2>
+      <form id="eventForm">
+        <input type="text" id="eventTitle" placeholder="Event title (e.g. FoCP Makeup class)" required>
+        <input type="datetime-local" id="eventDateTime" required>
+        <input type="text" id="posterName" placeholder="Posted by (e.g. Posted by Hamza)" required>
+        <textarea id="eventDescription" placeholder="Add details (e.g. important notes)" rows="3"></textarea>
+        <button type="submit">Add Event</button>
+      </form>
+    </section>
+
+    <!-- Events List (visible to everyone) -->
+    <section id="events">
+      <h2>Upcoming Events</h2>
+      <div id="eventList"></div>
+    </section>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
