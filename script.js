@@ -13,12 +13,12 @@ import {
 
 // --- Firebase Config ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCbR8QP9T6VMHxUuoggj9QtGo1miS81yC4",
-  authDomain: "se-16b-schedular.firebaseapp.com",
-  projectId: "se-16b-schedular",
-  storageBucket: "se-16b-schedular.firebasestorage.app",
-  messagingSenderId: "672415806987",
-  appId: "1:672415806987:web:56642840218108baf0790e"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // --- Initialize Firebase ---
