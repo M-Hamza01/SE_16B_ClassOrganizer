@@ -37,7 +37,6 @@ header h1 {
 }
 
 .subtitle {
-  margin-top: 1rem;
   font-size: 1rem;
   color: #ccc;
 }
@@ -60,6 +59,7 @@ header h1 {
 
 form input,
 form textarea,
+form select,
 form button {
   width: 100%;
   margin-bottom: 0.8rem;
@@ -71,8 +71,14 @@ form button {
 }
 
 form input,
-form textarea {
+form textarea,
+form select {
   background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+form select option {
+  background: #1a1a1a;
   color: #fff;
 }
 
@@ -171,6 +177,47 @@ form button:hover {
   transform: scale(1.05);
 }
 
+/* --- CATEGORY FILTER --- */
+#category-filter {
+  max-width: 700px;
+  margin: 0 auto 1.5rem auto;
+}
+
+.filter-container {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.category-btn {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid rgba(0, 188, 212, 0.3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.category-btn:hover {
+  background: rgba(0, 188, 212, 0.2);
+  border-color: rgba(0, 188, 212, 0.5);
+  color: #fff;
+}
+
+.category-btn.active {
+  background: linear-gradient(45deg, #00bcd4, #009688);
+  border-color: #00bcd4;
+  color: #fff;
+  font-weight: bold;
+}
+
 /* --- EVENTS SECTION --- */
 #events {
   max-width: 700px;
@@ -194,29 +241,125 @@ form button:hover {
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  transition: transform 0.2s;
+  transition: all 0.3s;
   position: relative;
+  border-left: 4px solid #00bcd4;
 }
 
 .event-card:hover {
   transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+/* --- URGENT EVENT STYLING --- */
+.event-card.urgent {
+  background: rgba(255, 69, 58, 0.15);
+  border-left-color: #ff453a;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(255, 69, 58, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(255, 69, 58, 0.8);
+  }
+}
+
+/* --- CATEGORY BADGES --- */
+.category-badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  background: rgba(0, 188, 212, 0.2);
+  color: #00e0ff;
+}
+
+.category-quiz .category-badge {
+  background: rgba(156, 39, 176, 0.2);
+  color: #ce93d8;
+}
+
+.category-makeup .category-badge {
+  background: rgba(33, 150, 243, 0.2);
+  color: #64b5f6;
+}
+
+.category-assignment .category-badge {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ffb74d;
+}
+
+.category-others .category-badge {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+
+/* --- URGENT BADGE --- */
+.urgent-badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 69, 58, 0.3);
+  color: #ff453a;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .event-title {
   font-size: 1.2rem;
   font-weight: bold;
   color: #00e0ff;
+  margin-bottom: 0.5rem;
 }
 
-.event-datetime,
-.event-poster {
+.event-datetime {
   font-size: 0.9rem;
   color: #ccc;
+  margin-bottom: 0.3rem;
+}
+
+/* --- COUNTDOWN STYLING --- */
+.countdown {
+  font-size: 0.95rem;
+  color: #4caf50;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.urgent .countdown {
+  color: #ff453a;
+  background: rgba(255, 69, 58, 0.1);
+}
+
+.event-poster {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 0.5rem;
 }
 
 .event-description {
-  margin-top: 0.5rem;
+  margin-top: 0.8rem;
   color: #ddd;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
 }
 
 .delete-btn {
@@ -229,6 +372,7 @@ form button:hover {
   top: 1rem;
   right: 1rem;
   transition: transform 0.2s ease;
+  z-index: 10;
 }
 
 .delete-btn:hover {
@@ -241,7 +385,7 @@ form button:hover {
     font-size: 1.6rem;
   }
   
-  #admin-panel, #events, #login-section {
+  #admin-panel, #events, #login-section, #category-filter {
     width: 95%;
   }
   
@@ -249,5 +393,18 @@ form button:hover {
     position: static;
     display: block;
     margin: 1rem auto;
+  }
+
+  .filter-container {
+    gap: 0.4rem;
+  }
+
+  .category-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .event-card {
+    padding-right: 2.5rem;
   }
 }

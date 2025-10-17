@@ -8,14 +8,14 @@ import {
   deleteDoc,
   doc,
   query,
-  orderBy
+  orderBy,
+  where
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // --- Firebase Config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCbR8QP9T6VMHxUuoggj9QtGo1miS81yC4",
   authDomain: "se-16b-schedular.firebaseapp.com",
-  databaseURL: "https://se-16b-schedular-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "se-16b-schedular",
   storageBucket: "se-16b-schedular.firebasestorage.app",
   messagingSenderId: "672415806987",
@@ -26,7 +26,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- Admin Password (Change this to whatever you want) ---
+// --- Admin Password ---
 const ADMIN_PASSWORD = "SE16B2025";
 
 // --- Select Elements ---
@@ -37,9 +37,12 @@ const loginSection = document.getElementById('login-section');
 const loginBtn = document.getElementById('loginBtn');
 const passwordInput = document.getElementById('adminPassword');
 const logoutBtn = document.getElementById('logoutBtn');
+const categoryBtns = document.querySelectorAll('.category-btn');
 
-// --- Check if already logged in ---
+// --- State ---
 let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+let currentCategory = 'all';
+let countdownInterval;
 
 // --- Initialize UI ---
 function initializeUI() {
@@ -49,6 +52,7 @@ function initializeUI() {
     showStudentView();
   }
   loadEvents();
+  startCountdownUpdates();
 }
 
 // --- Show Admin View ---
@@ -89,6 +93,16 @@ logoutBtn.addEventListener('click', () => {
   alert('✅ Logged out successfully!');
 });
 
+// --- Category Filter ---
+categoryBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    categoryBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCategory = btn.dataset.category;
+    loadEvents();
+  });
+});
+
 // --- Submit Form ---
 eventForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -97,8 +111,9 @@ eventForm.addEventListener('submit', async (e) => {
   const dateTime = document.getElementById('eventDateTime').value;
   const poster = document.getElementById('posterName').value.trim();
   const description = document.getElementById('eventDescription').value.trim();
+  const category = document.getElementById('eventCategory').value;
 
-  if (!title || !dateTime || !poster) {
+  if (!title || !dateTime || !poster || !category) {
     alert('Please fill in all required fields!');
     return;
   }
@@ -109,6 +124,7 @@ eventForm.addEventListener('submit', async (e) => {
       dateTime,
       poster,
       description,
+      category,
       createdAt: new Date()
     });
     alert("✅ Event added successfully!");
@@ -125,20 +141,35 @@ async function loadEvents() {
   try {
     eventList.innerHTML = "<p>Loading events...</p>";
 
+    const now = new Date();
     const q = query(collection(db, "events"), orderBy("dateTime"));
     const querySnapshot = await getDocs(q);
 
     eventList.innerHTML = "";
 
-    if (querySnapshot.empty) {
-      eventList.innerHTML = "<p>No events yet. Add your first event!</p>";
-      return;
-    }
+    let filteredEvents = [];
 
     querySnapshot.forEach((docSnap) => {
       const event = docSnap.data();
       const eventId = docSnap.id;
-      displayEvent(event, eventId);
+      const eventDate = new Date(event.dateTime);
+
+      // Only show upcoming events (not past)
+      if (eventDate > now) {
+        // Filter by category
+        if (currentCategory === 'all' || event.category === currentCategory) {
+          filteredEvents.push({ event, eventId, eventDate });
+        }
+      }
+    });
+
+    if (filteredEvents.length === 0) {
+      eventList.innerHTML = "<p>No upcoming events in this category.</p>";
+      return;
+    }
+
+    filteredEvents.forEach(({ event, eventId, eventDate }) => {
+      displayEvent(event, eventId, eventDate);
     });
   } catch (error) {
     console.error("❌ Error loading events:", error);
@@ -147,23 +178,39 @@ async function loadEvents() {
 }
 
 // --- Display Single Event ---
-function displayEvent(event, eventId) {
+function displayEvent(event, eventId, eventDate) {
   const eventCard = document.createElement('div');
   eventCard.classList.add('event-card');
+  eventCard.dataset.eventId = eventId;
+  eventCard.dataset.eventTime = eventDate.getTime();
 
-  const date = new Date(event.dateTime);
-  const formattedDate = date.toLocaleString('en-GB', {
+  const categoryClass = event.category || 'others';
+  eventCard.classList.add(`category-${categoryClass}`);
+
+  const formattedDate = eventDate.toLocaleString('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 
+  const countdown = getCountdown(eventDate);
+  const isUrgent = countdown.isLastHour;
+
   eventCard.innerHTML = `
-    ${isAdmin ? `<button class="delete-btn" data-id="${eventId}" title="Delete event">❌</button>` : ''}
+    ${isAdmin ? `<button class="delete-btn" data-id="${eventId}" title="Delete event">🗑️</button>` : ''}
+    <span class="category-badge">${getCategoryLabel(event.category)}</span>
+    ${isUrgent ? '<span class="urgent-badge">⚠️ LAST HOUR!</span>' : ''}
     <div class="event-title">${event.title}</div>
     <div class="event-datetime">📅 ${formattedDate}</div>
+    <div class="countdown" data-target="${eventDate.getTime()}">
+      ⏱️ ${countdown.text}
+    </div>
     <div class="event-poster">👤 ${event.poster}</div>
     ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
   `;
+
+  if (isUrgent) {
+    eventCard.classList.add('urgent');
+  }
 
   // Add delete functionality only for admins
   if (isAdmin) {
@@ -172,6 +219,86 @@ function displayEvent(event, eventId) {
   }
 
   eventList.appendChild(eventCard);
+}
+
+// --- Get Countdown Text ---
+function getCountdown(targetDate) {
+  const now = new Date();
+  const diff = targetDate - now;
+
+  if (diff <= 0) {
+    return { text: "Event started!", isLastHour: false };
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  const isLastHour = diff <= 60 * 60 * 1000; // Less than 1 hour
+
+  let text = "";
+  if (days > 0) {
+    text = `${days}d ${hours}h ${minutes}m`;
+  } else if (hours > 0) {
+    text = `${hours}h ${minutes}m`;
+  } else {
+    text = `${minutes}m`;
+  }
+
+  return { text: text + " left", isLastHour };
+}
+
+// --- Get Category Label ---
+function getCategoryLabel(category) {
+  const labels = {
+    'quiz': '📝 Quiz',
+    'makeup': '📚 Makeup',
+    'assignment': '📋 Assignment',
+    'others': '📌 Others'
+  };
+  return labels[category] || '📌 Others';
+}
+
+// --- Update All Countdowns ---
+function updateCountdowns() {
+  const countdownElements = document.querySelectorAll('.countdown');
+  const now = new Date();
+
+  countdownElements.forEach(el => {
+    const targetTime = parseInt(el.dataset.target);
+    const targetDate = new Date(targetTime);
+    const countdown = getCountdown(targetDate);
+    
+    el.textContent = `⏱️ ${countdown.text}`;
+
+    // Check if event should be removed (past events)
+    const eventCard = el.closest('.event-card');
+    if (targetDate <= now) {
+      eventCard.style.opacity = '0';
+      setTimeout(() => {
+        eventCard.remove();
+        if (eventList.children.length === 0) {
+          eventList.innerHTML = "<p>No upcoming events in this category.</p>";
+        }
+      }, 500);
+    }
+
+    // Add urgent class if in last hour
+    if (countdown.isLastHour && !eventCard.classList.contains('urgent')) {
+      eventCard.classList.add('urgent');
+      const urgentBadge = document.createElement('span');
+      urgentBadge.className = 'urgent-badge';
+      urgentBadge.textContent = '⚠️ LAST HOUR!';
+      eventCard.querySelector('.category-badge').after(urgentBadge);
+    }
+  });
+}
+
+// --- Start Countdown Updates ---
+function startCountdownUpdates() {
+  // Update every 10 seconds
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(updateCountdowns, 10000);
 }
 
 // --- Delete Event ---
