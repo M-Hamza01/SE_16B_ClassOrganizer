@@ -27,7 +27,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // --- Admin Password ---
-const ADMIN_PASSWORD = "SE16B2024";
+const ADMIN_PASSWORD = "SE16B2025";
 
 // --- Select Elements ---
 const eventForm = document.getElementById('eventForm');
