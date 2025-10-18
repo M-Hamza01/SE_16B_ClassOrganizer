@@ -6,10 +6,10 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
+  updateDoc,
   doc,
   query,
-  orderBy,
-  where
+  orderBy
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // --- Firebase Config ---
@@ -27,7 +27,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // --- Admin Password ---
-const ADMIN_PASSWORD = "SE16B2025";
+const ADMIN_PASSWORD = "SE16B2024";
 
 // --- Select Elements ---
 const eventForm = document.getElementById('eventForm');
@@ -43,6 +43,8 @@ const categoryBtns = document.querySelectorAll('.category-btn');
 let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 let currentCategory = 'all';
 let countdownInterval;
+let isEditMode = false;
+let editingEventId = null;
 
 // --- Initialize UI ---
 function initializeUI() {
@@ -79,6 +81,7 @@ loginBtn.addEventListener('click', () => {
     showAdminView();
     passwordInput.value = '';
     alert('✅ Admin access granted!');
+    loadEvents(); // Reload to show edit/delete buttons
   } else {
     alert('❌ Incorrect password!');
     passwordInput.value = '';
@@ -90,7 +93,9 @@ logoutBtn.addEventListener('click', () => {
   isAdmin = false;
   sessionStorage.removeItem('isAdmin');
   showStudentView();
+  cancelEdit(); // Cancel any ongoing edits
   alert('✅ Logged out successfully!');
+  loadEvents(); // Reload to hide edit/delete buttons
 });
 
 // --- Category Filter ---
@@ -119,20 +124,35 @@ eventForm.addEventListener('submit', async (e) => {
   }
 
   try {
-    await addDoc(collection(db, "events"), {
-      title,
-      dateTime,
-      poster,
-      description,
-      category,
-      createdAt: new Date()
-    });
-    alert("✅ Event added successfully!");
+    if (isEditMode && editingEventId) {
+      // Update existing event
+      await updateDoc(doc(db, "events", editingEventId), {
+        title,
+        dateTime,
+        poster,
+        description,
+        category,
+        updatedAt: new Date()
+      });
+      alert("✅ Event updated successfully!");
+      cancelEdit();
+    } else {
+      // Add new event
+      await addDoc(collection(db, "events"), {
+        title,
+        dateTime,
+        poster,
+        description,
+        category,
+        createdAt: new Date()
+      });
+      alert("✅ Event added successfully!");
+    }
     eventForm.reset();
     loadEvents();
   } catch (error) {
-    console.error("❌ Error adding event:", error);
-    alert("Error adding event. Check console for details.");
+    console.error("❌ Error saving event:", error);
+    alert("Error saving event. Check console for details.");
   }
 });
 
@@ -195,8 +215,17 @@ function displayEvent(event, eventId, eventDate) {
   const countdown = getCountdown(eventDate);
   const isUrgent = countdown.isLastHour;
 
+  // Build admin buttons HTML
+  let adminButtons = '';
+  if (isAdmin) {
+    adminButtons = `
+      <button class="edit-btn" title="Edit event">✏️</button>
+      <button class="delete-btn" title="Delete event">🗑️</button>
+    `;
+  }
+
   eventCard.innerHTML = `
-    ${isAdmin ? `<button class="delete-btn" data-id="${eventId}" title="Delete event">🗑️</button>` : ''}
+    ${adminButtons}
     <span class="category-badge">${getCategoryLabel(event.category)}</span>
     ${isUrgent ? '<span class="urgent-badge">⚠️ LAST HOUR!</span>' : ''}
     <div class="event-title">${event.title}</div>
@@ -212,10 +241,24 @@ function displayEvent(event, eventId, eventDate) {
     eventCard.classList.add('urgent');
   }
 
-  // Add delete functionality only for admins
+  // Add event listeners for admin buttons
   if (isAdmin) {
     const deleteBtn = eventCard.querySelector('.delete-btn');
-    deleteBtn.addEventListener('click', () => deleteEvent(eventId));
+    const editBtn = eventCard.querySelector('.edit-btn');
+    
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteEvent(eventId);
+      });
+    }
+    
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editEvent(eventId, event);
+      });
+    }
   }
 
   eventList.appendChild(eventCard);
@@ -289,7 +332,10 @@ function updateCountdowns() {
       const urgentBadge = document.createElement('span');
       urgentBadge.className = 'urgent-badge';
       urgentBadge.textContent = '⚠️ LAST HOUR!';
-      eventCard.querySelector('.category-badge').after(urgentBadge);
+      const categoryBadge = eventCard.querySelector('.category-badge');
+      if (categoryBadge) {
+        categoryBadge.after(urgentBadge);
+      }
     }
   });
 }
@@ -315,6 +361,63 @@ async function deleteEvent(eventId) {
     console.error("❌ Error deleting event:", error);
     alert("Error deleting event. Check console for details.");
   }
+}
+
+// --- Edit Event ---
+function editEvent(eventId, event) {
+  isEditMode = true;
+  editingEventId = eventId;
+
+  // Populate form with existing data
+  document.getElementById('eventTitle').value = event.title;
+  document.getElementById('eventCategory').value = event.category;
+  document.getElementById('eventDateTime').value = event.dateTime;
+  document.getElementById('posterName').value = event.poster;
+  document.getElementById('eventDescription').value = event.description || '';
+
+  // Update form UI
+  const formTitle = document.querySelector('#admin-panel h2');
+  formTitle.textContent = '✏️ Edit Event';
+  
+  const submitBtn = document.querySelector('#eventForm button[type="submit"]');
+  submitBtn.textContent = 'Update Event';
+  submitBtn.style.background = 'linear-gradient(45deg, #ff9800, #ff5722)';
+
+  // Add cancel button if not exists
+  if (!document.getElementById('cancelEditBtn')) {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.id = 'cancelEditBtn';
+    cancelBtn.textContent = 'Cancel Edit';
+    cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+    cancelBtn.style.marginTop = '0.5rem';
+    cancelBtn.addEventListener('click', cancelEdit);
+    submitBtn.after(cancelBtn);
+  }
+
+  // Scroll to form
+  adminPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// --- Cancel Edit ---
+function cancelEdit() {
+  isEditMode = false;
+  editingEventId = null;
+
+  // Reset form
+  eventForm.reset();
+
+  // Reset form UI
+  const formTitle = document.querySelector('#admin-panel h2');
+  formTitle.textContent = 'Add New Event';
+  
+  const submitBtn = document.querySelector('#eventForm button[type="submit"]');
+  submitBtn.textContent = 'Add Event';
+  submitBtn.style.background = 'linear-gradient(45deg, #00bcd4, #009688)';
+
+  // Remove cancel button
+  const cancelBtn = document.getElementById('cancelEditBtn');
+  if (cancelBtn) cancelBtn.remove();
 }
 
 // --- Initialize on page load ---

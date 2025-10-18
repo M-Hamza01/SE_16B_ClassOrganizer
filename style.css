@@ -379,6 +379,23 @@ form button:hover {
   transform: scale(1.2);
 }
 
+.edit-btn {
+  background: transparent;
+  border: none;
+  color: #ffa726;
+  font-size: 1.2rem;
+  cursor: pointer;
+  position: absolute;
+  top: 1rem;
+  right: 3rem;
+  transition: transform 0.2s ease;
+  z-index: 10;
+}
+
+.edit-btn:hover {
+  transform: scale(1.2);
+}
+
 /* --- RESPONSIVE DESIGN --- */
 @media (max-width: 600px) {
   header h1 {
