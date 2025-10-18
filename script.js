@@ -33,7 +33,9 @@ const ADMIN_PASSWORD = "SE16B2025";
 const eventForm = document.getElementById('eventForm');
 const eventList = document.getElementById('eventList');
 const adminPanel = document.getElementById('admin-panel');
-const loginSection = document.getElementById('login-section');
+const loginModal = document.getElementById('loginModal');
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+const closeModal = document.querySelector('.close-modal');
 const loginBtn = document.getElementById('loginBtn');
 const passwordInput = document.getElementById('adminPassword');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -60,16 +62,44 @@ function initializeUI() {
 // --- Show Admin View ---
 function showAdminView() {
   adminPanel.style.display = 'block';
-  loginSection.style.display = 'none';
+  adminLoginBtn.style.display = 'none';
   logoutBtn.style.display = 'inline-block';
 }
 
 // --- Show Student View ---
 function showStudentView() {
   adminPanel.style.display = 'none';
-  loginSection.style.display = 'block';
+  adminLoginBtn.style.display = 'inline-block';
   logoutBtn.style.display = 'none';
 }
+
+// --- Open Login Modal ---
+adminLoginBtn.addEventListener('click', () => {
+  loginModal.style.display = 'flex';
+  passwordInput.focus();
+});
+
+// --- Close Login Modal ---
+closeModal.addEventListener('click', () => {
+  loginModal.style.display = 'none';
+  passwordInput.value = '';
+});
+
+// Close modal when clicking outside
+loginModal.addEventListener('click', (e) => {
+  if (e.target === loginModal) {
+    loginModal.style.display = 'none';
+    passwordInput.value = '';
+  }
+});
+
+// Close modal on ESC key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && loginModal.style.display === 'flex') {
+    loginModal.style.display = 'none';
+    passwordInput.value = '';
+  }
+});
 
 // --- Login Handler ---
 loginBtn.addEventListener('click', () => {
@@ -79,12 +109,21 @@ loginBtn.addEventListener('click', () => {
     isAdmin = true;
     sessionStorage.setItem('isAdmin', 'true');
     showAdminView();
+    loginModal.style.display = 'none';
     passwordInput.value = '';
     alert('✅ Admin access granted!');
     loadEvents(); // Reload to show edit/delete buttons
   } else {
     alert('❌ Incorrect password!');
     passwordInput.value = '';
+    passwordInput.focus();
+  }
+});
+
+// Allow Enter key to submit password
+passwordInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    loginBtn.click();
   }
 });
 

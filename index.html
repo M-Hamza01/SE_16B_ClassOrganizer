@@ -11,18 +11,20 @@
     <header>
       <h1>SE 16B | The Software Engineers</h1>
       <p class="subtitle">Makeups, quizzes, deadlines and more</p>
+      <button id="adminLoginBtn" class="admin-login-btn">Login as Admin</button>
       <button id="logoutBtn" style="display: none;">Logout</button>
     </header>
 
-    <!-- Login Section (for students to unlock admin access) -->
-    <section id="login-section">
-      <div class="login-box">
-        <h3>Admin Access</h3>
-        <p>Enter password to add/delete events</p>
-        <input type="password" id="adminPassword" placeholder="Admin password">
-        <button id="loginBtn">Login as Admin</button>
+    <!-- Login Modal (hidden by default) -->
+    <div id="loginModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Admin Login</h3>
+        <p>Enter password to access admin features</p>
+        <input type="password" id="adminPassword" placeholder="Enter admin password">
+        <button id="loginBtn">Login</button>
       </div>
-    </section>
+    </div>
 
     <!-- Admin Panel (hidden by default) -->
     <section id="admin-panel" style="display: none;">
