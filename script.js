@@ -12,6 +12,15 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+// --- Import Firebase SDKs ---
+
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  onAuthStateChanged, 
+  signOut 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
 // --- Firebase Config ---
 const firebaseConfig = {
   apiKey: "AIzaSyCbR8QP9T6VMHxUuoggj9QtGo1miS81yC4",
@@ -25,9 +34,10 @@ const firebaseConfig = {
 // --- Initialize Firebase ---
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // --- Admin Password ---
-const ADMIN_PASSWORD = "SE16B2025";
+//Not needed now cuz its now used firebase auth
 
 // --- Select Elements ---
 const eventForm = document.getElementById('eventForm');
@@ -38,6 +48,7 @@ const adminLoginBtn = document.getElementById('adminLoginBtn');
 const closeModal = document.querySelector('.close-modal');
 const loginBtn = document.getElementById('loginBtn');
 const passwordInput = document.getElementById('adminPassword');
+const emailInput = document.getElementById('adminEmail');
 const logoutBtn = document.getElementById('logoutBtn');
 const categoryBtns = document.querySelectorAll('.category-btn');
 
@@ -50,12 +61,12 @@ let editingEventId = null;
 
 // --- Initialize UI ---
 function initializeUI() {
-  if (isAdmin) {
-    showAdminView();
-  } else {
-    showStudentView();
-  }
-  loadEvents();
+  // We don't need to check sessionStorage anymore.
+  // The onAuthStateChanged listener above does all the work!
+
+  // We also don't need to call loadEvents() here, 
+  // because onAuthStateChanged calls it for us.
+
   startCountdownUpdates();
 }
 
@@ -102,19 +113,30 @@ document.addEventListener('keydown', (e) => {
 });
 
 // --- Login Handler ---
-loginBtn.addEventListener('click', () => {
-  const enteredPassword = passwordInput.value;
-  
-  if (enteredPassword === ADMIN_PASSWORD) {
-    isAdmin = true;
-    sessionStorage.setItem('isAdmin', 'true');
-    showAdminView();
+loginBtn.addEventListener('click', async () => {
+  const email = emailInput.value;
+  const password = passwordInput.value;
+
+  if (!email || !password) {
+    alert("Please enter both email and password.");
+    return;
+  }
+
+  try {
+    // This is the new Firebase login function
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+    // We don't need to check the password here. Firebase does it.
+    // We will check if they are an ADMIN in the new listener (Step 5.5)
+
+    console.log('Login successful:', userCredential.user.email);
     loginModal.style.display = 'none';
+    emailInput.value = '';
     passwordInput.value = '';
-    alert('✅ Admin access granted!');
-    loadEvents(); // Reload to show edit/delete buttons
-  } else {
-    alert('❌ Incorrect password!');
+
+  } catch (error) {
+    console.error("Login failed:", error.message);
+    alert('❌ Login failed! Check your email or password.');
     passwordInput.value = '';
     passwordInput.focus();
   }
@@ -128,13 +150,49 @@ passwordInput.addEventListener('keypress', (e) => {
 });
 
 // --- Logout Handler ---
-logoutBtn.addEventListener('click', () => {
-  isAdmin = false;
-  sessionStorage.removeItem('isAdmin');
-  showStudentView();
-  cancelEdit(); // Cancel any ongoing edits
-  alert('✅ Logged out successfully!');
-  loadEvents(); // Reload to hide edit/delete buttons
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await signOut(auth); // This is the new Firebase logout
+    console.log('User signed out.');
+
+    // We don't need to manually set isAdmin or reload.
+    // The listener in the next step will handle it all.
+
+  } catch (error) {
+    console.error("Sign out failed:", error);
+  }
+});
+
+// --- Listens for Login/Logout State Changes ---
+onAuthStateChanged(auth, (user) => {
+
+  // Put your 3 Admin UIDs here!
+  const ADMIN_UIDS = [
+    'd8wZidDzSiOcOhdziF06mcPF5o52', 
+    'hdPYYzaLiBRxw5cDcy5hqdwcpDJ2', 
+    //paste others UID here in single quotes
+  ];
+
+  if (user && ADMIN_UIDS.includes(user.uid)) {
+    // --- USER IS LOGGED IN *AND* IS AN ADMIN ---
+    console.log('Admin user is logged in:', user.email);
+    isAdmin = true;
+    showAdminView();
+
+  } else {
+    // --- USER IS LOGGED OUT OR IS NOT AN ADMIN ---
+    if (user) {
+      console.log('User is logged in, but is not an admin:', user.email);
+    } else {
+      console.log('User is logged out.');
+    }
+    isAdmin = false;
+    showStudentView();
+  }
+
+  // Now that we know if they are an admin or not,
+  // load the events (so the edit/delete buttons show or hide)
+  loadEvents(); 
 });
 
 // --- Category Filter ---
