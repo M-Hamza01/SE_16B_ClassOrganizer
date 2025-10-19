@@ -2,7 +2,7 @@
   "name": "SE 16B Class Scheduler",
   "short_name": "SE 16B",
   "description": "Event scheduler for SE 16B - The Software Engineers",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00bcd4",

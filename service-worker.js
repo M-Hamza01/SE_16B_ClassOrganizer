@@ -1,10 +1,10 @@
 const CACHE_NAME = 'se-16b-scheduler-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/images/SE_16B_batchPhoto.jpg'
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './images/SE_16B_batchPhoto.jpg'
 ];
 
 // Install service worker and cache resources
