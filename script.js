@@ -169,7 +169,8 @@ onAuthStateChanged(auth, (user) => {
   // Put your 3 Admin UIDs here!
   const ADMIN_UIDS = [
     'd8wZidDzSiOcOhdziF06mcPF5o52', 
-    'hdPYYzaLiBRxw5cDcy5hqdwcpDJ2', 
+    'hdPYYzaLiBRxw5cDcy5hqdwcpDJ2',
+    'iQfW7F9fJqYRLkWPc18sD92nSMA3' 
     //paste others UID here in single quotes
   ];
 
