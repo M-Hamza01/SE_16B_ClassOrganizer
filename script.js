@@ -1,3 +1,19 @@
+// Add this at the TOP of your script.js file (before Firebase imports)
+
+// Splash Screen Controller
+window.addEventListener('load', () => {
+  const splashScreen = document.getElementById('splash-screen');
+  
+  // Wait for animation to complete (2.5 seconds total)
+  setTimeout(() => {
+    splashScreen.classList.add('fade-out');
+    
+    // Remove splash screen from DOM after fade out
+    setTimeout(() => {
+      splashScreen.remove();
+    }, 600);
+  }, 2500);
+});
 // --- Import Firebase SDKs ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {

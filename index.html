@@ -18,6 +18,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Splash Screen -->
+  <div id="splash-screen">
+    <div class="splash-background"></div>
+    <div class="splash-gradient-sweep"></div>
+    <div class="splash-content">
+      <h1 class="splash-text">
+        <span class="letter">S</span>
+        <span class="letter">E</span>
+        <span class="letter-space"></span>
+        <span class="letter">1</span>
+        <span class="letter">6</span>
+        <span class="letter">B</span>
+      </h1>
+    </div>
+  </div>
+
   <div class="overlay">
     <header>
       <h1>SE 16B | The Software Engineers</h1>
@@ -29,16 +45,12 @@
     <!-- Login Modal (hidden by default) -->
     <div id="loginModal" class="modal" style="display: none;">
       <div class="modal-content">
-  <span class="close-modal">&times;</span>
-  <h3>Admin Login</h3>
-  
-  
-  <input type="email" id="adminEmail" placeholder="Enter your email" required>
-  
-  <input type="password" id="adminPassword" placeholder="Enter your password" required>
-  
-  <button id="loginBtn">Login</button>
-</div>
+        <span class="close-modal">&times;</span>
+        <h3>Admin Login</h3>
+        <p>Enter password to access admin features</p>
+        <input type="password" id="adminPassword" placeholder="Enter admin password">
+        <button id="loginBtn">Login</button>
+      </div>
     </div>
 
     <!-- Admin Panel (hidden by default) -->
