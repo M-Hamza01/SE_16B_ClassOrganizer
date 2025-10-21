@@ -655,4 +655,38 @@ form button:hover {
   .modal-content {
     padding: 2rem 1.5rem;
   }
+  
+  /* --- Style for "NEW" Badge --- */
+.new-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ffeb3b; /* A bright yellow */
+  color: #333;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: pulse 1.5s infinite;
+}
+
+/* Makes admin buttons position correctly with the new badge */
+.edit-btn,
+.delete-btn {
+  position: relative;
+  z-index: 10;
+}
+
+/* Animation for the badge to pulse */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 }

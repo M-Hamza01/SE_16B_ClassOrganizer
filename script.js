@@ -74,6 +74,7 @@ let currentCategory = 'all';
 let countdownInterval;
 let isEditMode = false;
 let editingEventId = null;
+let lastVisitTime = localStorage.getItem('lastVisitTime') || 0; //to save the last visited time
 
 // --- Initialize UI ---
 function initializeUI() {
@@ -84,6 +85,10 @@ function initializeUI() {
   // because onAuthStateChanged calls it for us.
 
   startCountdownUpdates();
+  // We use setTimeout to save it after 1 second
+  setTimeout(() => {
+    localStorage.setItem('lastVisitTime', new Date().getTime());
+  }, 1000);
 }
 
 // --- Show Admin View ---
@@ -287,6 +292,10 @@ async function loadEvents() {
       const event = docSnap.data();
       const eventId = docSnap.id;
       const eventDate = new Date(event.dateTime);
+      // Get the event's creation time, default to 0 if it doesn't exist
+      const eventCreationTime = event.createdAt ? event.createdAt.toMillis() : 0;
+      // Compare it to the user's last visit
+      const isNew = eventCreationTime > lastVisitTime;
 
       // Only show upcoming events (not past)
       if (eventDate > now) {
@@ -312,7 +321,7 @@ async function loadEvents() {
 }
 
 // --- Display Single Event ---
-function displayEvent(event, eventId, eventDate) {
+function displayEvent(event, eventId, eventDate, isNew) {
   const eventCard = document.createElement('div');
   eventCard.classList.add('event-card');
   eventCard.dataset.eventId = eventId;
@@ -337,6 +346,7 @@ function displayEvent(event, eventId, eventDate) {
       <button class="delete-btn" title="Delete event">🗑️</button>
     `;
   }
+  const newBadge = isNew ? '<span class="new-badge">NEW</span>' : '';
 
   eventCard.innerHTML = `
     ${adminButtons}
