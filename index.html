@@ -35,25 +35,35 @@
   </div>
 
   <div class="overlay">
+    <!-- Notification Banner -->
+    <div id="notificationBanner" class="notification-banner">
+      <div class="notification-content">
+        <span class="notification-icon">🔔</span>
+        <div class="notification-text">
+          <strong id="notificationTitle"></strong>
+          <p id="notificationMessage"></p>
+        </div>
+        <button class="notification-close">&times;</button>
+      </div>
+    </div>
+
     <header>
       <h1>SE 16B | The Software Engineers</h1>
       <p class="subtitle">Makeups, quizzes, deadlines and more</p>
+      <span id="newEventsBadge" class="new-events-badge" style="display: none;">0 new</span>
       <button id="adminLoginBtn" class="admin-login-btn">Login as Admin</button>
       <button id="logoutBtn" style="display: none;">Logout</button>
     </header>
 
-   <div id="loginModal" class="modal">
-
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h3>Admin Login</h3>
-    <input type="email" id="adminEmail" placeholder="Enter your email" required>
-    <input type="password" id="adminPassword" placeholder="Enter your password" required>
-    
-    <button id="loginBtn">Login</button>
-  </div>
-  
-</div>
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Admin Login</h3>
+        <input type="email" id="adminEmail" placeholder="Enter your email" required>
+        <input type="password" id="adminPassword" placeholder="Enter your password" required>
+        <button id="loginBtn">Login</button>
+      </div>
+    </div>
 
     <!-- Admin Panel (hidden by default) -->
     <section id="admin-panel" style="display: none;">
@@ -95,7 +105,5 @@
   </div>
 
   <script type="module" src="script.js"></script>
-  
-  
 </body>
 </html>

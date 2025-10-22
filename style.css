@@ -1,5 +1,3 @@
-/* Add this to your style.css */
-
 /* --- SPLASH SCREEN --- */
 #splash-screen {
   position: fixed;
@@ -94,7 +92,6 @@
   width: 1.5rem;
 }
 
-/* Stagger the letter animations */
 .letter:nth-child(1) { animation-delay: 0.5s; }
 .letter:nth-child(2) { animation-delay: 0.65s; }
 .letter:nth-child(4) { animation-delay: 0.95s; }
@@ -112,7 +109,6 @@
   }
 }
 
-/* Fade out splash screen */
 #splash-screen.fade-out {
   animation: fadeOut 0.6s ease-out forwards;
 }
@@ -127,17 +123,6 @@
   }
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .splash-text {
-    font-size: 3.5rem;
-    letter-spacing: 0.2rem;
-  }
-  
-  .letter-space {
-    width: 1rem;
-  }
-}
 /* --- GENERAL RESET --- */
 * {
   margin: 0;
@@ -156,11 +141,161 @@ body {
   min-height: 100vh;
 }
 
-/* --- DARK OVERLAY TO MAKE TEXT VISIBLE --- */
+/* --- DARK OVERLAY --- */
 .overlay {
   background: rgba(0, 0, 0, 0.7);
   min-height: 100vh;
   padding: 2rem;
+}
+
+/* --- NOTIFICATION BANNER --- */
+.notification-banner {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 500px;
+  background: linear-gradient(135deg, #00bcd4, #009688);
+  color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 188, 212, 0.4);
+  z-index: 10000;
+  transition: top 0.5s ease-out;
+}
+
+.notification-banner.show {
+  top: 20px;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification-icon {
+  font-size: 2rem;
+  animation: bellRing 0.5s ease-in-out;
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-text strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+}
+
+.notification-text p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.notification-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+  user-select: none;
+}
+
+.notification-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* --- NEW EVENTS BADGE --- */
+.new-events-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+  animation: badgePulse 2s infinite;
+  z-index: 100;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+  }
+}
+
+/* --- NEW EVENT INDICATOR --- */
+.event-card.new-event {
+  border-left-color: #ff6b6b;
+  position: relative;
+  animation: newCardGlow 2s ease-in-out;
+}
+
+.event-card.new-event::before {
+  content: 'NEW';
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  animation: newBadgeBounce 0.6s ease-out;
+  z-index: 5;
+}
+
+@keyframes newBadgeBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes newCardGlow {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.5);
+  }
 }
 
 /* --- HEADER --- */
@@ -275,10 +410,10 @@ form button:hover {
   z-index: 1000;
   justify-content: center;
   align-items: center;
-  animation: fadeIn 0.3s ease;
+  animation: modalFadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
+@keyframes modalFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
@@ -310,14 +445,8 @@ form button:hover {
 
 .modal-content h3 {
   color: #00e0ff;
-  margin-bottom: 0.5rem;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  color: #ccc;
-  font-size: 0.9rem;
   margin-bottom: 1.5rem;
+  font-size: 1.5rem;
 }
 
 .modal-content input {
@@ -371,6 +500,7 @@ form button:hover {
   cursor: pointer;
   transition: all 0.3s;
   line-height: 1;
+  user-select: none;
 }
 
 .close-modal:hover {
@@ -378,13 +508,10 @@ form button:hover {
   transform: rotate(90deg);
 }
 
-/* --- LOGIN SECTION --- */
-/* Removed - now using modal */
-
 /* --- LOGOUT BUTTON --- */
 #logoutBtn {
   position: absolute;
-  top: 1rem;
+  top: 0;
   right: 2rem;
   padding: 0.6rem 1.2rem;
   background: rgba(255, 97, 97, 0.8);
@@ -465,11 +592,13 @@ form button:hover {
 .event-card {
   background: rgba(255, 255, 255, 0.08);
   padding: 1rem;
+  padding-top: 2.5rem;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   transition: all 0.3s;
   position: relative;
   border-left: 4px solid #00bcd4;
+  cursor: pointer;
 }
 
 .event-card:hover {
@@ -624,8 +753,13 @@ form button:hover {
 
 /* --- RESPONSIVE DESIGN --- */
 @media (max-width: 600px) {
+  header {
+    padding-top: 0;
+  }
+
   header h1 {
     font-size: 1.6rem;
+    margin-top: 3.5rem;
   }
   
   #admin-panel, #events, #category-filter {
@@ -634,9 +768,11 @@ form button:hover {
   
   .admin-login-btn,
   #logoutBtn {
-    position: static;
-    display: block;
-    margin: 1rem auto;
+    position: absolute;
+    top: 0.5rem;
+    right: 50%;
+    transform: translateX(50%);
+    margin: 0;
   }
 
   .filter-container {
@@ -656,37 +792,34 @@ form button:hover {
     padding: 2rem 1.5rem;
   }
   
-  /* --- Style for "NEW" Badge --- */
-.new-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #ffeb3b; /* A bright yellow */
-  color: #333;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  animation: pulse 1.5s infinite;
-}
+  .notification-banner {
+    width: 95%;
+    padding: 0.8rem;
+  }
+  
+  .notification-icon {
+    font-size: 1.5rem;
+  }
+  
+  .notification-text strong {
+    font-size: 1rem;
+  }
+  
+  .notification-text p {
+    font-size: 0.8rem;
+  }
+  
+  .new-events-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
 
-/* Makes admin buttons position correctly with the new badge */
-.edit-btn,
-.delete-btn {
-  position: relative;
-  z-index: 10;
-}
-
-/* Animation for the badge to pulse */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
+  .splash-text {
+    font-size: 3.5rem;
+    letter-spacing: 0.2rem;
   }
-  50% {
-    transform: scale(1.1);
+  
+  .letter-space {
+    width: 1rem;
   }
-  100% {
-    transform: scale(1);
-  }
-}
 }
