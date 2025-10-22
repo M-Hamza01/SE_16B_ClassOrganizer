@@ -360,7 +360,7 @@ async function loadEvents() {
       showNotification(
         'New Events!',
         `You have ${newEventsCount} new event${newEventsCount > 1 ? 's' : ''} to check`,
-        6000
+        12000
       );
     }
 
