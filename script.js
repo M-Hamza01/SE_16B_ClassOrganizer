@@ -358,7 +358,7 @@ async function loadEvents() {
     // Show notification if there are new events
     if (newEventsCount > 0 && !isAdmin) {
       showNotification(
-        '🆕 New Events!',
+        'New Events!',
         `You have ${newEventsCount} new event${newEventsCount > 1 ? 's' : ''} to check`,
         6000
       );
