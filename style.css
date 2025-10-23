@@ -754,12 +754,16 @@ form button:hover {
 /* --- RESPONSIVE DESIGN --- */
 @media (max-width: 600px) {
   header {
-    padding-top: 0;
+    padding-top: 4rem;
   }
 
   header h1 {
     font-size: 1.6rem;
-    margin-top: 3.5rem;
+    margin-top: 0;
+  }
+  
+  .subtitle {
+    margin-bottom: 0.5rem;
   }
   
   #admin-panel, #events, #category-filter {
@@ -770,9 +774,16 @@ form button:hover {
   #logoutBtn {
     position: absolute;
     top: 0.5rem;
-    right: 50%;
-    transform: translateX(50%);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
     margin: 0;
+  }
+  
+  .new-events-badge {
+    top: 3rem;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
   }
 
   .filter-container {
@@ -786,6 +797,7 @@ form button:hover {
 
   .event-card {
     padding-right: 5rem;
+    padding-top: 2.5rem;
   }
 
   .modal-content {
@@ -795,6 +807,11 @@ form button:hover {
   .notification-banner {
     width: 95%;
     padding: 0.8rem;
+    top: -150px;
+  }
+  
+  .notification-banner.show {
+    top: 70px;
   }
   
   .notification-icon {
@@ -807,11 +824,6 @@ form button:hover {
   
   .notification-text p {
     font-size: 0.8rem;
-  }
-  
-  .new-events-badge {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
   }
 
   .splash-text {
