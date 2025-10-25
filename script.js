@@ -23,7 +23,8 @@ import {
   updateDoc,
   doc,
   query,
-  orderBy
+  orderBy,
+  limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 import { 
@@ -32,6 +33,9 @@ import {
   onAuthStateChanged, 
   signOut 
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+// ImgBB API Key
+const IMGBB_API_KEY = '24c5da3422541230cb24e662b047a2b4';
 
 // --- Firebase Config ---
 const firebaseConfig = {
@@ -66,6 +70,18 @@ const notificationMessage = document.getElementById('notificationMessage');
 const notificationClose = document.querySelector('.notification-close');
 const newEventsBadge = document.getElementById('newEventsBadge');
 
+// Announcement elements
+const addAnnouncementBtn = document.getElementById('addAnnouncementBtn');
+const announcementModal = document.getElementById('announcementModal');
+const closeAnnouncementModal = document.getElementById('closeAnnouncementModal');
+const announcementForm = document.getElementById('announcementForm');
+const carouselTrack = document.getElementById('carouselTrack');
+const carouselDots = document.getElementById('carouselDots');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const announcementImage = document.getElementById('announcementImage');
+const imagePreview = document.getElementById('imagePreview');
+
 // --- State ---
 let isAdmin = false;
 let currentCategory = 'all';
@@ -75,27 +91,21 @@ let editingEventId = null;
 let lastVisitTime = parseInt(localStorage.getItem('lastVisitTime')) || 0;
 let seenEvents = JSON.parse(localStorage.getItem('seenEvents')) || [];
 
+// Announcement state
+let currentSlide = 0;
+let announcements = [];
+let autoplayInterval;
+let isEditingAnnouncement = false;
+let editingAnnouncementId = null;
+let uploadedImageFile = null;
+
 // --- Initialize UI ---
 function initializeUI() {
   startCountdownUpdates();
-  // Save current visit time after 1 second
+  loadAnnouncements();
   setTimeout(() => {
     localStorage.setItem('lastVisitTime', new Date().getTime().toString());
   }, 1000);
-}
-
-// --- Show Admin View ---
-function showAdminView() {
-  if (adminPanel) adminPanel.style.display = 'block';
-  if (adminLoginBtn) adminLoginBtn.style.display = 'none';
-  if (logoutBtn) logoutBtn.style.display = 'inline-block';
-}
-
-// --- Show Student View ---
-function showStudentView() {
-  if (adminPanel) adminPanel.style.display = 'none';
-  if (adminLoginBtn) adminLoginBtn.style.display = 'inline-block';
-  if (logoutBtn) logoutBtn.style.display = 'none';
 }
 
 // --- Notification Functions ---
@@ -146,7 +156,22 @@ function markEventAsSeen(eventId) {
   }
 }
 
-// --- Open Login Modal ---
+// --- Admin UI Functions ---
+function showAdminView() {
+  if (adminPanel) adminPanel.style.display = 'block';
+  if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+  if (logoutBtn) logoutBtn.style.display = 'inline-block';
+  if (addAnnouncementBtn) addAnnouncementBtn.style.display = 'inline-block';
+}
+
+function showStudentView() {
+  if (adminPanel) adminPanel.style.display = 'none';
+  if (adminLoginBtn) adminLoginBtn.style.display = 'inline-block';
+  if (logoutBtn) logoutBtn.style.display = 'none';
+  if (addAnnouncementBtn) addAnnouncementBtn.style.display = 'none';
+}
+
+// --- Modal Handlers ---
 if (adminLoginBtn) {
   adminLoginBtn.addEventListener('click', () => {
     if (loginModal) {
@@ -156,7 +181,6 @@ if (adminLoginBtn) {
   });
 }
 
-// --- Close Login Modal ---
 if (closeModal) {
   closeModal.addEventListener('click', () => {
     if (loginModal) loginModal.style.display = 'none';
@@ -165,7 +189,6 @@ if (closeModal) {
   });
 }
 
-// Close modal when clicking outside
 if (loginModal) {
   loginModal.addEventListener('click', (e) => {
     if (e.target === loginModal) {
@@ -176,23 +199,26 @@ if (loginModal) {
   });
 }
 
-// Close modal on ESC key
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && loginModal && loginModal.style.display === 'flex') {
-    loginModal.style.display = 'none';
-    if (passwordInput) passwordInput.value = '';
-    if (emailInput) emailInput.value = '';
+  if (e.key === 'Escape') {
+    if (loginModal && loginModal.style.display === 'flex') {
+      loginModal.style.display = 'none';
+      if (passwordInput) passwordInput.value = '';
+      if (emailInput) emailInput.value = '';
+    }
+    if (announcementModal && announcementModal.style.display === 'flex') {
+      closeAnnouncementForm();
+    }
   }
 });
 
-// --- Notification Close ---
 if (notificationClose) {
   notificationClose.addEventListener('click', () => {
     hideNotification();
   });
 }
 
-// --- Login Handler ---
+// --- Login/Logout ---
 if (loginBtn) {
   loginBtn.addEventListener('click', async () => {
     const email = emailInput?.value;
@@ -219,14 +245,12 @@ if (loginBtn) {
   });
 }
 
-// Allow Enter key to submit
 if (passwordInput) {
   passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && loginBtn) loginBtn.click();
   });
 }
 
-// --- Logout Handler ---
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
     try {
@@ -237,7 +261,6 @@ if (logoutBtn) {
   });
 }
 
-// --- Auth State Listener ---
 onAuthStateChanged(auth, (user) => {
   const ADMIN_UIDS = [
     'd8wZidDzSiOcOhdziF06mcPF5o52', 
@@ -258,9 +281,353 @@ onAuthStateChanged(auth, (user) => {
   }
 
   loadEvents();
+  loadAnnouncements();
 });
 
-// --- Category Filter ---
+// --- ANNOUNCEMENT CAROUSEL FUNCTIONS ---
+
+async function loadAnnouncements() {
+  try {
+    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(10));
+    const querySnapshot = await getDocs(q);
+    
+    announcements = [];
+    querySnapshot.forEach((docSnap) => {
+      announcements.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    displayAnnouncements();
+    if (announcements.length > 0) {
+      startAutoplay();
+    }
+  } catch (error) {
+    console.error("Error loading announcements:", error);
+  }
+}
+
+function displayAnnouncements() {
+  if (!carouselTrack) return;
+
+  if (announcements.length === 0) {
+    carouselTrack.innerHTML = '<div class="no-announcements"><p>No announcements yet</p></div>';
+    if (carouselDots) carouselDots.innerHTML = '';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  carouselTrack.innerHTML = '';
+  if (carouselDots) carouselDots.innerHTML = '';
+
+  announcements.forEach((announcement, index) => {
+    const slide = document.createElement('div');
+    slide.className = 'carousel-slide';
+    if (index === 0) slide.classList.add('active');
+
+    let imageHTML = '';
+    if (announcement.imageUrl) {
+      imageHTML = `<img src="${announcement.imageUrl}" alt="${announcement.title}" class="announcement-image">`;
+    }
+
+    let linkHTML = '';
+    if (announcement.link) {
+      linkHTML = `<a href="${announcement.link}" target="_blank" class="announcement-link">Learn More</a>`;
+    }
+
+    let actionsHTML = '';
+    if (isAdmin) {
+      actionsHTML = `
+        <div class="announcement-actions">
+          <button class="edit-announcement-btn" data-id="${announcement.id}">✏️</button>
+          <button class="delete-announcement-btn" data-id="${announcement.id}">🗑️</button>
+        </div>
+      `;
+    }
+
+    slide.innerHTML = `
+      ${actionsHTML}
+      ${imageHTML}
+      <div class="announcement-content">
+        <h3 class="announcement-title">${announcement.title}</h3>
+        ${announcement.description ? `<p class="announcement-description">${announcement.description}</p>` : ''}
+        ${linkHTML}
+      </div>
+    `;
+
+    carouselTrack.appendChild(slide);
+
+    // Dots
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    if (index === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goToSlide(index));
+    if (carouselDots) carouselDots.appendChild(dot);
+  });
+
+  // Add event listeners for admin buttons
+  if (isAdmin) {
+    document.querySelectorAll('.edit-announcement-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        editAnnouncement(id);
+      });
+    });
+
+    document.querySelectorAll('.delete-announcement-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        deleteAnnouncement(id);
+      });
+    });
+  }
+
+  if (prevBtn) prevBtn.disabled = false;
+  if (nextBtn) nextBtn.disabled = false;
+}
+
+function goToSlide(index) {
+  if (index < 0 || index >= announcements.length) return;
+
+  currentSlide = index;
+  const offset = -currentSlide * 100;
+  if (carouselTrack) carouselTrack.style.transform = `translateX(${offset}%)`;
+
+  document.querySelectorAll('.carousel-slide').forEach((slide, i) => {
+    slide.classList.toggle('active', i === currentSlide);
+  });
+
+  document.querySelectorAll('.dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === currentSlide);
+  });
+}
+
+function nextSlide() {
+  const nextIndex = (currentSlide + 1) % announcements.length;
+  goToSlide(nextIndex);
+}
+
+function prevSlide() {
+  const prevIndex = (currentSlide - 1 + announcements.length) % announcements.length;
+  goToSlide(prevIndex);
+}
+
+function startAutoplay() {
+  stopAutoplay();
+  autoplayInterval = setInterval(() => {
+    nextSlide();
+  }, 6000); // 6 seconds
+}
+
+function stopAutoplay() {
+  if (autoplayInterval) {
+    clearInterval(autoplayInterval);
+    autoplayInterval = null;
+  }
+}
+
+if (prevBtn) {
+  prevBtn.addEventListener('click', () => {
+    prevSlide();
+    stopAutoplay();
+    startAutoplay();
+  });
+}
+
+if (nextBtn) {
+  nextBtn.addEventListener('click', () => {
+    nextSlide();
+    stopAutoplay();
+    startAutoplay();
+  });
+}
+
+// Pause autoplay on hover
+if (carouselTrack) {
+  carouselTrack.addEventListener('mouseenter', stopAutoplay);
+  carouselTrack.addEventListener('mouseleave', () => {
+    if (announcements.length > 0) startAutoplay();
+  });
+}
+
+// --- ANNOUNCEMENT FORM ---
+
+if (addAnnouncementBtn) {
+  addAnnouncementBtn.addEventListener('click', () => {
+    openAnnouncementForm();
+  });
+}
+
+if (closeAnnouncementModal) {
+  closeAnnouncementModal.addEventListener('click', () => {
+    closeAnnouncementForm();
+  });
+}
+
+if (announcementModal) {
+  announcementModal.addEventListener('click', (e) => {
+    if (e.target === announcementModal) {
+      closeAnnouncementForm();
+    }
+  });
+}
+
+if (document.getElementById('cancelAnnouncementBtn')) {
+  document.getElementById('cancelAnnouncementBtn').addEventListener('click', () => {
+    closeAnnouncementForm();
+  });
+}
+
+if (announcementImage) {
+  announcementImage.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      uploadedImageFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (imagePreview) {
+          imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function openAnnouncementForm() {
+  isEditingAnnouncement = false;
+  editingAnnouncementId = null;
+  uploadedImageFile = null;
+  
+  if (announcementForm) announcementForm.reset();
+  if (imagePreview) imagePreview.innerHTML = '';
+  
+  const formTitle = document.getElementById('announcementFormTitle');
+  if (formTitle) formTitle.textContent = 'Add Announcement';
+  
+  const submitBtn = document.getElementById('submitAnnouncementBtn');
+  if (submitBtn) submitBtn.textContent = 'Add Announcement';
+  
+  if (announcementModal) announcementModal.style.display = 'flex';
+}
+
+function closeAnnouncementForm() {
+  if (announcementModal) announcementModal.style.display = 'none';
+  if (announcementForm) announcementForm.reset();
+  if (imagePreview) imagePreview.innerHTML = '';
+  isEditingAnnouncement = false;
+  editingAnnouncementId = null;
+  uploadedImageFile = null;
+}
+
+if (announcementForm) {
+  announcementForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('announcementTitle')?.value.trim();
+    const description = document.getElementById('announcementDescription')?.value.trim();
+    const link = document.getElementById('announcementLink')?.value.trim();
+
+    if (!title) {
+      alert('Please enter a title!');
+      return;
+    }
+
+    if (announcements.length >= 10 && !isEditingAnnouncement) {
+      alert('Maximum 10 announcements allowed. Please delete some old ones first.');
+      return;
+    }
+
+    try {
+      let imageUrl = '';
+
+      // Upload image to ImgBB if provided
+      if (uploadedImageFile) {
+        const formData = new FormData();
+        formData.append('image', uploadedImageFile);
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          imageUrl = data.data.url;
+        } else {
+          throw new Error('Image upload failed');
+        }
+      }
+
+      const announcementData = {
+        title,
+        description: description || '',
+        link: link || '',
+        imageUrl: imageUrl || (isEditingAnnouncement ? announcements.find(a => a.id === editingAnnouncementId)?.imageUrl || '' : ''),
+        createdAt: new Date()
+      };
+
+      if (isEditingAnnouncement && editingAnnouncementId) {
+        await updateDoc(doc(db, "announcements", editingAnnouncementId), announcementData);
+        showNotification('✅ Updated!', 'Announcement updated successfully');
+      } else {
+        await addDoc(collection(db, "announcements"), announcementData);
+        showNotification('🎉 Added!', 'New announcement added successfully');
+      }
+
+      closeAnnouncementForm();
+      loadAnnouncements();
+    } catch (error) {
+      console.error("Error saving announcement:", error);
+      alert('Error saving announcement. Check console.');
+    }
+  });
+}
+
+async function editAnnouncement(id) {
+  const announcement = announcements.find(a => a.id === id);
+  if (!announcement) return;
+
+  isEditingAnnouncement = true;
+  editingAnnouncementId = id;
+
+  document.getElementById('announcementTitle').value = announcement.title;
+  document.getElementById('announcementDescription').value = announcement.description || '';
+  document.getElementById('announcementLink').value = announcement.link || '';
+
+  if (announcement.imageUrl && imagePreview) {
+    imagePreview.innerHTML = `<img src="${announcement.imageUrl}" alt="Current">`;
+  }
+
+  const formTitle = document.getElementById('announcementFormTitle');
+  if (formTitle) formTitle.textContent = 'Edit Announcement';
+
+  const submitBtn = document.getElementById('submitAnnouncementBtn');
+  if (submitBtn) submitBtn.textContent = 'Update Announcement';
+
+  if (announcementModal) announcementModal.style.display = 'flex';
+}
+
+async function deleteAnnouncement(id) {
+  if (!confirm('Delete this announcement?')) return;
+
+  try {
+    // Note: Images on ImgBB stay there (no delete API in free tier)
+    // This is fine - they don't count against your quota
+    await deleteDoc(doc(db, "announcements", id));
+    showNotification('🗑️ Deleted!', 'Announcement deleted');
+    loadAnnouncements();
+  } catch (error) {
+    console.error("Error deleting announcement:", error);
+    alert('Error deleting announcement.');
+  }
+}
+
+// --- EVENTS FUNCTIONALITY ---
+
 categoryBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     categoryBtns.forEach(b => b.classList.remove('active'));
@@ -270,7 +637,6 @@ categoryBtns.forEach(btn => {
   });
 });
 
-// --- Submit Form ---
 if (eventForm) {
   eventForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -310,7 +676,7 @@ if (eventForm) {
         
         showNotification(
           '🎉 Event Created!',
-          `${getCategoryLabel(category).split(' ')[1]} - ${title} has been added`,
+          `${getCategoryLabel(category).split(' ')[0]} - ${title} has been added`,
           5000
         );
         
@@ -325,7 +691,6 @@ if (eventForm) {
   });
 }
 
-// --- Load Events ---
 async function loadEvents() {
   if (!eventList) return;
   
@@ -355,12 +720,11 @@ async function loadEvents() {
       }
     });
 
-    // Show notification if there are new events
     if (newEventsCount > 0 && !isAdmin) {
       showNotification(
         'New Events!',
         `You have ${newEventsCount} new event${newEventsCount > 1 ? 's' : ''} to check`,
-        12000
+        6000
       );
     }
 
@@ -381,7 +745,6 @@ async function loadEvents() {
   }
 }
 
-// --- Display Event ---
 function displayEvent(event, eventId, eventDate, isNew) {
   const eventCard = document.createElement('div');
   eventCard.classList.add('event-card');
@@ -447,7 +810,6 @@ function displayEvent(event, eventId, eventDate, isNew) {
     }
   }
   
-  // Mark as seen when clicked
   eventCard.addEventListener('click', () => {
     if (isNew) {
       markEventAsSeen(eventId);
@@ -458,7 +820,6 @@ function displayEvent(event, eventId, eventDate, isNew) {
   if (eventList) eventList.appendChild(eventCard);
 }
 
-// --- Get Countdown ---
 function getCountdown(targetDate) {
   const now = new Date();
   const diff = targetDate - now;
@@ -485,7 +846,6 @@ function getCountdown(targetDate) {
   return { text: text + " left", isLastHour };
 }
 
-// --- Get Category Label ---
 function getCategoryLabel(category) {
   const labels = {
     'quiz': '📝 Quiz',
@@ -493,10 +853,9 @@ function getCategoryLabel(category) {
     'assignment': '📋 Assignment',
     'others': '📌 Others'
   };
-  return labels[category] || '📌 Others';
+  return labels[category] || 'Others';
 }
 
-// --- Update Countdowns ---
 function updateCountdowns() {
   const countdownElements = document.querySelectorAll('.countdown');
   const now = new Date();
@@ -532,13 +891,11 @@ function updateCountdowns() {
   });
 }
 
-// --- Start Countdown Updates ---
 function startCountdownUpdates() {
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = setInterval(updateCountdowns, 10000);
 }
 
-// --- Delete Event ---
 async function deleteEvent(eventId) {
   const confirmDelete = confirm("Are you sure you want to delete this event?");
   
@@ -554,7 +911,6 @@ async function deleteEvent(eventId) {
   }
 }
 
-// --- Edit Event ---
 function editEvent(eventId, event) {
   isEditMode = true;
   editingEventId = eventId;
@@ -588,7 +944,6 @@ function editEvent(eventId, event) {
   if (adminPanel) adminPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// --- Cancel Edit ---
 function cancelEdit() {
   isEditMode = false;
   editingEventId = null;

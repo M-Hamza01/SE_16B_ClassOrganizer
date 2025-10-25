@@ -47,14 +47,22 @@
       </div>
     </div>
 
-    <header>
-      <h1>SE 16B | The Software Engineers</h1>
-      <p class="subtitle">Makeups, quizzes, deadlines and more</p>
-      <span id="newEventsBadge" class="new-events-badge" style="display: none;">0 new</span>
-      <button id="adminLoginBtn" class="admin-login-btn">Login as Admin</button>
-      <button id="logoutBtn" style="display: none;">Logout</button>
+    <!-- Professional Header -->
+    <header class="main-header">
+      <div class="header-container">
+        <div class="header-left">
+          <h1 class="site-title">SE 16B</h1>
+          <p class="site-tagline">The Software Engineers</p>
+        </div>
+        <div class="header-right">
+          <span id="newEventsBadge" class="new-events-badge" style="display: none;">0 new</span>
+          <button id="adminLoginBtn" class="admin-login-btn">Login as Admin</button>
+          <button id="logoutBtn" class="logout-btn" style="display: none;">Logout</button>
+        </div>
+      </div>
     </header>
 
+    <!-- Login Modal -->
     <div id="loginModal" class="modal">
       <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -65,7 +73,59 @@
       </div>
     </div>
 
-    <!-- Admin Panel (hidden by default) -->
+    <!-- Announcements Carousel -->
+    <section class="announcements-section">
+      <div class="announcements-header">
+        <h2>Announcements</h2>
+        <button id="addAnnouncementBtn" class="add-announcement-btn" style="display: none;">+ Add</button>
+      </div>
+
+      <div class="carousel-wrapper">
+        <button class="carousel-nav prev-btn" id="prevBtn">&larr;</button>
+        
+        <div class="carousel-container" id="carouselContainer">
+          <div class="carousel-track" id="carouselTrack">
+            <!-- Announcements will be loaded here -->
+            <div class="no-announcements">
+              <p>No announcements yet</p>
+            </div>
+          </div>
+        </div>
+        
+        <button class="carousel-nav next-btn" id="nextBtn">&rarr;</button>
+      </div>
+
+      <div class="carousel-dots" id="carouselDots"></div>
+    </section>
+
+    <!-- Announcement Form Modal -->
+    <div id="announcementModal" class="modal">
+      <div class="modal-content announcement-form-modal">
+        <span class="close-modal" id="closeAnnouncementModal">&times;</span>
+        <h3 id="announcementFormTitle">Add Announcement</h3>
+        <form id="announcementForm">
+          <input type="text" id="announcementTitle" placeholder="Announcement title" required maxlength="100">
+          <textarea id="announcementDescription" placeholder="Description (optional)" rows="3" maxlength="300"></textarea>
+          
+          <div class="image-upload-section">
+            <label for="announcementImage" class="image-upload-label">
+              <span>Upload Image (optional)</span>
+              <input type="file" id="announcementImage" accept="image/*">
+            </label>
+            <div id="imagePreview" class="image-preview"></div>
+          </div>
+
+          <input type="url" id="announcementLink" placeholder="Link (optional)">
+          
+          <div class="form-actions">
+            <button type="submit" id="submitAnnouncementBtn">Add Announcement</button>
+            <button type="button" id="cancelAnnouncementBtn" class="cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Panel -->
     <section id="admin-panel" style="display: none;">
       <h2>Add New Event</h2>
       <form id="eventForm">
@@ -97,7 +157,7 @@
       </div>
     </section>
 
-    <!-- Events List (visible to everyone) -->
+    <!-- Events List -->
     <section id="events">
       <h2>Upcoming Events</h2>
       <div id="eventList"></div>
