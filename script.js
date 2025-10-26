@@ -450,6 +450,70 @@ if (carouselTrack) {
   carouselTrack.addEventListener('mouseleave', () => {
     if (announcements.length > 0) startAutoplay();
   });
+
+  // Touch/tap to pause (mobile)
+  let touchStartX = 0;
+  let touchEndX = 0;
+  let isPaused = false;
+
+  carouselTrack.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    stopAutoplay();
+  });
+
+  carouselTrack.addEventListener('touchmove', (e) => {
+    touchEndX = e.touches[0].clientX;
+  });
+
+  carouselTrack.addEventListener('touchend', () => {
+    const swipeDistance = touchStartX - touchEndX;
+    
+    // Swipe left (next)
+    if (swipeDistance > 50) {
+      nextSlide();
+    }
+    // Swipe right (previous)
+    else if (swipeDistance < -50) {
+      prevSlide();
+    }
+    
+    // Resume autoplay after 3 seconds of inactivity
+    setTimeout(() => {
+      if (announcements.length > 0) startAutoplay();
+    }, 3000);
+  });
+
+  // Tap to pause/resume
+  carouselTrack.addEventListener('click', (e) => {
+    // Don't interfere with button clicks
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    
+    if (autoplayInterval) {
+      stopAutoplay();
+      isPaused = true;
+      // Show pause indicator
+      const pauseIndicator = document.createElement('div');
+      pauseIndicator.className = 'pause-indicator';
+      pauseIndicator.textContent = '⏸';
+      pauseIndicator.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;opacity:0.8;pointer-events:none;z-index:100;';
+      carouselTrack.style.position = 'relative';
+      carouselTrack.appendChild(pauseIndicator);
+      
+      setTimeout(() => pauseIndicator.remove(), 800);
+    } else if (isPaused) {
+      startAutoplay();
+      isPaused = false;
+      // Show play indicator
+      const playIndicator = document.createElement('div');
+      playIndicator.className = 'play-indicator';
+      playIndicator.textContent = '▶';
+      playIndicator.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;opacity:0.8;pointer-events:none;z-index:100;';
+      carouselTrack.style.position = 'relative';
+      carouselTrack.appendChild(playIndicator);
+      
+      setTimeout(() => playIndicator.remove(), 800);
+    }
+  });
 }
 
 // --- ANNOUNCEMENT FORM ---
@@ -722,7 +786,7 @@ async function loadEvents() {
 
     if (newEventsCount > 0 && !isAdmin) {
       showNotification(
-        'New Events!',
+        '🆕 New Events!',
         `You have ${newEventsCount} new event${newEventsCount > 1 ? 's' : ''} to check`,
         6000
       );

@@ -142,15 +142,15 @@ body {
   padding-top: 2rem;
 }
 
-/* --- PROFESSIONAL HEADER --- */
+/* --- HEADER --- */
 .main-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid rgba(0, 188, 212, 0.3);
+  background: rgba(0, 8, 9, 0.786);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(0, 8, 9, 0.786);
   z-index: 1000;
   padding: 1.2rem 2rem;
 }
@@ -377,6 +377,8 @@ body {
 .carousel-track {
   display: flex;
   transition: transform 0.5s ease-in-out;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .carousel-slide {
@@ -999,38 +1001,56 @@ form button:hover {
 /* --- RESPONSIVE DESIGN --- */
 @media (max-width: 600px) {
   body {
-    padding-top: 120px;
+    padding-top: 70px;
   }
 
   .main-header {
-    padding: 1rem;
+    padding: 0.8rem 1rem;
   }
 
   .header-container {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 1rem;
   }
 
   .header-left {
-    text-align: center;
+    text-align: left;
+    flex: 1;
   }
 
   .site-title {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    line-height: 1.2;
+  }
+
+  .site-tagline {
+    font-size: 0.75rem;
+    margin-top: 0.1rem;
   }
 
   .header-right {
-    flex-direction: column;
-    width: 100%;
+    flex-direction: row;
+    width: auto;
+    gap: 0.5rem;
   }
 
   .admin-login-btn,
   .logout-btn {
-    width: 100%;
+    width: auto;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .new-events-badge {
+    position: static;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
   }
 
   .notification-banner.show {
-    top: 130px;
+    top: 90px;
   }
 
   .announcements-section {
