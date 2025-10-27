@@ -1186,7 +1186,7 @@ form button:hover {
 .time-filter-container .time-btn {
   flex: 1; /* Make them equal width */
   max-width: 150px; /* Stop them from being too wide on desktop */
-  
+  -webkit-tap-highlight-color: transparent;
   background: transparent;
   border: none;
   border-radius: 0; /* Remove all pill shapes */
