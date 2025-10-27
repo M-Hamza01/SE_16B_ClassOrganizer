@@ -821,6 +821,42 @@ form button:hover {
   color: #fff;
   font-weight: bold;
 }
+/* --- TIME FILTER BUTTONS --- */
+.time-filter-container {
+  margin-bottom: 0.8rem;
+}
+
+.time-btn {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid rgba(0, 188, 212, 0.3);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.time-btn:hover {
+  background: rgba(0, 188, 212, 0.2);
+  border-color: rgba(0, 188, 212, 0.5);
+  color: #fff;
+}
+
+.time-btn.active {
+  background: linear-gradient(45deg, #00bcd4, #009688);
+  border-color: #00bcd4;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Style for completed countdowns */
+.countdown.past {
+  color: #999;
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 500;
+}
 
 /* --- EVENTS SECTION --- */
 #events {
@@ -1133,4 +1169,52 @@ form button:hover {
   .letter-space {
     width: 1rem;
   }
+  
+}
+/* --- NEW: Time Filter Segmented Control (Underline Style) --- */
+
+/* 1. Reset the container to be simple */
+.time-filter-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem; /* Add a nice gap between the two buttons */
+  margin: 0 auto 1.5rem auto; /* Center it */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Optional: a faint line for the whole bar */
+}
+
+/* 2. Style for ALL time buttons (active and inactive) */
+.time-filter-container .time-btn {
+  flex: 1; /* Make them equal width */
+  max-width: 150px; /* Stop them from being too wide on desktop */
+  
+  background: transparent;
+  border: none;
+  border-radius: 0; /* Remove all pill shapes */
+  
+  /* This is the "inactive" underline state */
+  border-bottom: 3px solid transparent;
+  
+  /* This is the "inactive" text color */
+  color: #aaa; 
+  
+  padding: 0.6rem 0.5rem; /* Adjust padding for the underline */
+  font-size: 1rem; /* Slightly larger for clarity */
+  font-weight: 600;
+  
+  transition: all 0.3s ease;
+}
+
+/* 3. Style for ONLY the ACTIVE button */
+.time-filter-container .time-btn.active {
+  /* The "active" underline */
+  border-bottom: 3px solid #00bcd4; 
+  
+  /* The "active" text color */
+  color: #00e0ff; 
+}
+
+/* 4. A clean hover effect for the non-active button */
+.time-filter-container .time-btn:not(.active):hover {
+  border-bottom: 3px solid rgba(0, 188, 212, 0.3); /* Faint underline on hover */
+  color: #fff;
 }

@@ -69,6 +69,8 @@ const notificationTitle = document.getElementById('notificationTitle');
 const notificationMessage = document.getElementById('notificationMessage');
 const notificationClose = document.querySelector('.notification-close');
 const newEventsBadge = document.getElementById('newEventsBadge');
+const timeFilterBtns = document.querySelectorAll('.time-btn');
+const eventListTitle = document.querySelector('#events h2');
 
 // Announcement elements
 const addAnnouncementBtn = document.getElementById('addAnnouncementBtn');
@@ -85,6 +87,7 @@ const imagePreview = document.getElementById('imagePreview');
 // --- State ---
 let isAdmin = false;
 let currentCategory = 'all';
+let currentTimeFilter = 'upcoming'; // 'upcoming' or 'past'
 let countdownInterval;
 let isEditMode = false;
 let editingEventId = null;
@@ -700,6 +703,20 @@ categoryBtns.forEach(btn => {
     loadEvents();
   });
 });
+// --- NEW: TIME FILTER LOGIC ---
+timeFilterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    timeFilterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTimeFilter = btn.dataset.filter;
+    if (currentTimeFilter === 'upcoming') {
+      eventListTitle.textContent = 'Upcoming Events';
+    } else {
+      eventListTitle.textContent = 'Finished';
+    }
+    loadEvents(); // Reload events with the new time filter
+  });
+});
 
 if (eventForm) {
   eventForm.addEventListener('submit', async (e) => {
@@ -755,6 +772,7 @@ if (eventForm) {
   });
 }
 
+// --- MODIFIED FUNCTION ---
 async function loadEvents() {
   if (!eventList) return;
   
@@ -762,29 +780,47 @@ async function loadEvents() {
     eventList.innerHTML = "<p>Loading events...</p>";
 
     const now = new Date();
+    // This is our 24-hour cutoff
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+    // Query is simpler: just get events and order by date
     const q = query(collection(db, "events"), orderBy("dateTime"));
     const querySnapshot = await getDocs(q);
 
-    eventList.innerHTML = "";
-    let filteredEvents = [];
+    let upcomingEvents = [];
+    let pastEvents = [];
     let newEventsCount = 0;
 
     querySnapshot.forEach((docSnap) => {
       const event = docSnap.data();
       const eventId = docSnap.id;
       const eventDate = new Date(event.dateTime);
-      const eventIsNew = isEventNew(eventId, event.createdAt);
-      
-      if (eventIsNew) newEventsCount++;
 
-      if (eventDate > now) {
-        if (currentCategory === 'all' || event.category === currentCategory) {
-          filteredEvents.push({ event, eventId, eventDate, isNew: eventIsNew });
-        }
+      // --- NEW LOGIC IS HERE ---
+      if (eventDate < oneDayAgo) {
+        // Event is MORE than 1 day old, auto-delete it.
+        console.log(`Auto-deleting event older than 24h: ${event.title}`);
+        // This is "fire and forget" - we don't wait for it to finish.
+        deleteDoc(doc(db, "events", eventId))
+          .catch(err => console.error("Error auto-deleting event:", eventId, err));
+
+      } else if (eventDate < now) {
+        // Event is in the past, but LESS than 1 day old.
+        const eventData = { event, eventId, eventDate, isNew: false };
+        pastEvents.push(eventData);
+
+      } else {
+        // Event is in the future.
+        const eventIsNew = isEventNew(eventId, event.createdAt);
+        if (eventIsNew) newEventsCount++;
+        const eventData = { event, eventId, eventDate, isNew: eventIsNew };
+        upcomingEvents.push(eventData);
       }
+      // --- END OF NEW LOGIC ---
     });
 
-    if (newEventsCount > 0 && !isAdmin) {
+    // Show new event notification only for upcoming events
+    if (newEventsCount > 0 && !isAdmin && currentTimeFilter === 'upcoming') {
       showNotification(
         '🆕 New Events!',
         `You have ${newEventsCount} new event${newEventsCount > 1 ? 's' : ''} to check`,
@@ -792,23 +828,50 @@ async function loadEvents() {
       );
     }
 
+    let eventsToDisplay = [];
+
+    if (currentTimeFilter === 'upcoming') {
+      eventsToDisplay = upcomingEvents;
+      // Already sorted oldest-to-newest by query
+    } else {
+      eventsToDisplay = pastEvents.sort((a, b) => b.eventDate - a.eventDate);
+      // Sort past events newest-to-oldest
+    }
+
+    // Now, filter by category
+    const filteredEvents = eventsToDisplay.filter(({ event }) => {
+      return currentCategory === 'all' || event.category === currentCategory;
+    });
+
+    // Clear list
+    eventList.innerHTML = "";
+
     if (filteredEvents.length === 0) {
-      eventList.innerHTML = "<p>No upcoming events in this category.</p>";
+      if (currentTimeFilter === 'upcoming') {
+        eventList.innerHTML = "<p>No upcoming events in this category.</p>";
+      } else {
+        // This message now means "no events from the last 24h"
+        eventList.innerHTML = "<p>No past events found in this category.</p>";
+      }
       updateNewEventsBadge();
       return;
     }
 
     filteredEvents.forEach(({ event, eventId, eventDate, isNew }) => {
-      displayEvent(event, eventId, eventDate, isNew);
+      // Only pass 'isNew' if we are in the upcoming view
+      displayEvent(event, eventId, eventDate, currentTimeFilter === 'upcoming' && isNew);
     });
     
+    // Update badge (it will correctly count 0 if in 'past' view)
     updateNewEventsBadge();
+
   } catch (error) {
     console.error("❌ Error loading events:", error);
     eventList.innerHTML = "<p>Error loading events. Check Firestore rules.</p>";
   }
 }
 
+// --- MODIFIED FUNCTION ---
 function displayEvent(event, eventId, eventDate, isNew) {
   const eventCard = document.createElement('div');
   eventCard.classList.add('event-card');
@@ -827,8 +890,26 @@ function displayEvent(event, eventId, eventDate, isNew) {
     timeStyle: 'short',
   });
 
-  const countdown = getCountdown(eventDate);
-  const isUrgent = countdown.isLastHour;
+  // --- MODIFIED COUNTDOWN/URGENT LOGIC ---
+  const now = new Date();
+  const isPastEvent = eventDate <= now;
+  let countdownHTML = '';
+  let isUrgent = false;
+
+  if (isPastEvent) {
+    // Event is in the past, show "Completed"
+    countdownHTML = `<div class="countdown past">✅ Completed</div>`;
+  } else {
+    // Event is in the future, show countdown
+    const countdown = getCountdown(eventDate);
+    isUrgent = countdown.isLastHour;
+    countdownHTML = `
+      <div class="countdown" data-target="${eventDate.getTime()}">
+        ⏱️ ${countdown.text}
+      </div>
+    `;
+  }
+  // --- END MODIFIED LOGIC ---
 
   let adminButtons = '';
   if (isAdmin) {
@@ -844,9 +925,7 @@ function displayEvent(event, eventId, eventDate, isNew) {
     ${isUrgent ? '<span class="urgent-badge">⚠️ LAST HOUR!</span>' : ''}
     <div class="event-title">${event.title}</div>
     <div class="event-datetime">📅 ${formattedDate}</div>
-    <div class="countdown" data-target="${eventDate.getTime()}">
-      ⏱️ ${countdown.text}
-    </div>
+    ${countdownHTML}
     <div class="event-poster">👤 ${event.poster}</div>
     ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
   `;
@@ -856,6 +935,7 @@ function displayEvent(event, eventId, eventDate, isNew) {
   }
 
   if (isAdmin) {
+    // ... (Your existing deleteBtn and editBtn logic remains unchanged)
     const deleteBtn = eventCard.querySelector('.delete-btn');
     const editBtn = eventCard.querySelector('.edit-btn');
     
@@ -921,6 +1001,7 @@ function getCategoryLabel(category) {
 }
 
 function updateCountdowns() {
+  if (currentTimeFilter === 'past') return;
   const countdownElements = document.querySelectorAll('.countdown');
   const now = new Date();
 
