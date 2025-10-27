@@ -807,6 +807,7 @@ form button:hover {
   transition: all 0.3s;
   font-size: 0.9rem;
   font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .category-btn:hover {
