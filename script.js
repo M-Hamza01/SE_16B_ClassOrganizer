@@ -995,7 +995,9 @@ function getCategoryLabel(category) {
     'quiz': '📝 Quiz',
     'makeup': '📚 Makeup',
     'assignment': '📋 Assignment',
+    'lab' : '🔬 Lab',
     'others': '📌 Others'
+    
   };
   return labels[category] || 'Others';
 }
