@@ -2,15 +2,22 @@
 
 > A centralized, real-time dashboard for the **SE-16B** class to manage schedules, assignments, announcements, makeups and more.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Status](https://img.shields.io/badge/status-live-success)
-![Tech](https://img.shields.io/badge/tech-Firebase%20%7C%20Vanilla%20JS-orange)
-
-## 🌟 Live Demo
-[🔗 Visit the App](https://se-16b-schedular.firebaseapp.com)
-
 ## 💡 Overview
 This Progressive Web App (PWA) serves as the digital notice board for our class. It replaces scattered WhatsApp messages with a single, organized hub. It features a **student view** for checking deadlines and an **admin dashboard** for class representatives to post updates.
+
+## 📸 User Interface
+
+### 💻 Desktop View
+> The dashboard automatically adapts to wide screens, giving a complete overview of the schedule.
+
+![Desktop Dashboard](screenshots/desktop_dashboard.png)
+
+### 📱 Mobile View (PWA)
+> Optimized for touch interactions. Students can install this as a native app and can be installed on iOS as well.
+
+| Student Home | Admin Panel | Announcement Carousel |
+|:---:|:---:|:---:|
+| <img src="screenshots/mobile_home.png" width="250"> | <img src="screenshots/mobile_admin.png" width="250"> | <img src="screenshots/mobile_carousel.png" width="250"> |
 
 ## ✨ Key Features
 
