@@ -105,7 +105,7 @@
         <h3 id="announcementFormTitle">Add Announcement</h3>
         <form id="announcementForm">
           <input type="text" id="announcementTitle" placeholder="Announcement title" required maxlength="100">
-          <textarea id="announcementDescription" placeholder="Description (optional)" rows="3" maxlength="300"></textarea>
+          <textarea id="announcementDescription" placeholder="Description (optional)" rows="3" maxlength="500"></textarea>
           
           <div class="image-upload-section">
             <label for="announcementImage" class="image-upload-label">
@@ -116,6 +116,12 @@
           </div>
 
           <input type="url" id="announcementLink" placeholder="Link (optional)">
+          <input type="text" id="announcementLinkButtonText" placeholder="Link button text (e.g., 'Visit Website')" maxlength="50">
+          
+          <input type="tel" id="announcementContactPhone" placeholder="Contact phone (optional)">
+          <input type="tel" id="announcementContactWhatsApp" placeholder="WhatsApp number (optional)">
+          
+          <input type="number" id="announcementDurationDays" placeholder="Duration in days (default: 7)" min="1" max="365" value="7">
           
           <div class="form-actions">
             <button type="submit" id="submitAnnouncementBtn">Add Announcement</button>

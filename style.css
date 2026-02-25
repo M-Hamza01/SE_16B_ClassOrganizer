@@ -430,6 +430,41 @@ body {
   transform: translateY(-2px);
 }
 
+.announcement-contacts {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.contact-btn {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+  color: white;
+}
+
+.whatsapp-btn {
+  background: linear-gradient(45deg, #25d366, #128c7e);
+}
+
+.whatsapp-btn:hover {
+  background: linear-gradient(45deg, #128c7e, #25d366);
+  transform: translateY(-2px);
+}
+
+.phone-btn {
+  background: linear-gradient(45deg, #2196f3, #1976d2);
+}
+
+.phone-btn:hover {
+  background: linear-gradient(45deg, #1976d2, #2196f3);
+  transform: translateY(-2px);
+}
+
 .announcement-actions {
   position: absolute;
   top: 1rem;

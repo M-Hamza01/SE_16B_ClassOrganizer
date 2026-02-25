@@ -52,6 +52,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// --- Class Configuration ---
+const CLASS_CODE = "BA9E00"; // SE 16B class code
+
 // --- Select Elements ---
 const eventForm = document.getElementById('eventForm');
 const eventList = document.getElementById('eventList');
@@ -291,16 +294,32 @@ onAuthStateChanged(auth, (user) => {
 
 async function loadAnnouncements() {
   try {
-    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(10));
+    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(20));
     const querySnapshot = await getDocs(q);
     
     announcements = [];
+    const now = new Date();
+    
     querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      
+      // Filter out expired announcements
+      if (data.expiryDate) {
+        const expiryDate = data.expiryDate.toDate ? data.expiryDate.toDate() : new Date(data.expiryDate);
+        if (expiryDate < now) {
+          console.log('Skipping expired announcement:', data.title);
+          return; // Skip expired announcements
+        }
+      }
+      
       announcements.push({
         id: docSnap.id,
-        ...docSnap.data()
+        ...data
       });
     });
+    
+    // Limit to 10 active announcements after filtering
+    announcements = announcements.slice(0, 10);
 
     displayAnnouncements();
     if (announcements.length > 0) {
@@ -308,6 +327,7 @@ async function loadAnnouncements() {
     }
   } catch (error) {
     console.error("Error loading announcements:", error);
+    console.error("Full error details:", error.message, error.code);
   }
 }
 
@@ -337,7 +357,25 @@ function displayAnnouncements() {
 
     let linkHTML = '';
     if (announcement.link) {
-      linkHTML = `<a href="${announcement.link}" target="_blank" class="announcement-link">Learn More</a>`;
+      const buttonText = announcement.linkButtonText || 'Learn More';
+      // Add https:// if protocol is missing
+      let url = announcement.link;
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      linkHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="announcement-link">${buttonText}</a>`;
+    }
+
+    let contactHTML = '';
+    if (announcement.contactWhatsApp || announcement.contactPhone) {
+      contactHTML = '<div class="announcement-contacts">';
+      if (announcement.contactWhatsApp) {
+        contactHTML += `<a href="https://wa.me/${announcement.contactWhatsApp.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" class="contact-btn whatsapp-btn">💬 WhatsApp</a>`;
+      }
+      if (announcement.contactPhone) {
+        contactHTML += `<a href="tel:${announcement.contactPhone}" class="contact-btn phone-btn">📞 Call</a>`;
+      }
+      contactHTML += '</div>';
     }
 
     let actionsHTML = '';
@@ -357,6 +395,7 @@ function displayAnnouncements() {
         <h3 class="announcement-title">${announcement.title}</h3>
         ${announcement.description ? `<p class="announcement-description">${announcement.description}</p>` : ''}
         ${linkHTML}
+        ${contactHTML}
       </div>
     `;
 
@@ -596,6 +635,10 @@ if (announcementForm) {
     const title = document.getElementById('announcementTitle')?.value.trim();
     const description = document.getElementById('announcementDescription')?.value.trim();
     const link = document.getElementById('announcementLink')?.value.trim();
+    const linkButtonText = document.getElementById('announcementLinkButtonText')?.value.trim();
+    const contactPhone = document.getElementById('announcementContactPhone')?.value.trim();
+    const contactWhatsApp = document.getElementById('announcementContactWhatsApp')?.value.trim();
+    const durationDays = parseInt(document.getElementById('announcementDurationDays')?.value) || 7;
 
     if (!title) {
       alert('Please enter a title!');
@@ -629,12 +672,21 @@ if (announcementForm) {
         }
       }
 
+      // Calculate expiry date
+      const now = new Date();
+      const expiryDate = new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000));
+
       const announcementData = {
         title,
         description: description || '',
         link: link || '',
+        linkButtonText: linkButtonText || '',
+        contactPhone: contactPhone || '',
+        contactWhatsApp: contactWhatsApp || '',
+        durationDays,
+        expiryDate,
         imageUrl: imageUrl || (isEditingAnnouncement ? announcements.find(a => a.id === editingAnnouncementId)?.imageUrl || '' : ''),
-        createdAt: new Date()
+        createdAt: isEditingAnnouncement ? announcements.find(a => a.id === editingAnnouncementId)?.createdAt : new Date()
       };
 
       if (isEditingAnnouncement && editingAnnouncementId) {
@@ -664,6 +716,10 @@ async function editAnnouncement(id) {
   document.getElementById('announcementTitle').value = announcement.title;
   document.getElementById('announcementDescription').value = announcement.description || '';
   document.getElementById('announcementLink').value = announcement.link || '';
+  document.getElementById('announcementLinkButtonText').value = announcement.linkButtonText || '';
+  document.getElementById('announcementContactPhone').value = announcement.contactPhone || '';
+  document.getElementById('announcementContactWhatsApp').value = announcement.contactWhatsApp || '';
+  document.getElementById('announcementDurationDays').value = announcement.durationDays || 7;
 
   if (announcement.imageUrl && imagePreview) {
     imagePreview.innerHTML = `<img src="${announcement.imageUrl}" alt="Current">`;
@@ -735,7 +791,7 @@ if (eventForm) {
 
     try {
       if (isEditMode && editingEventId) {
-        await updateDoc(doc(db, "events", editingEventId), {
+        await updateDoc(doc(db, `classes/${CLASS_CODE}/events`, editingEventId), {
           title,
           dateTime,
           poster,
@@ -746,7 +802,7 @@ if (eventForm) {
         alert("✅ Event updated successfully!");
         cancelEdit();
       } else {
-        await addDoc(collection(db, "events"), {
+        await addDoc(collection(db, `classes/${CLASS_CODE}/events`), {
           title,
           dateTime,
           poster,
@@ -784,7 +840,7 @@ async function loadEvents() {
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
 
     // Query is simpler: just get events and order by date
-    const q = query(collection(db, "events"), orderBy("dateTime"));
+    const q = query(collection(db, `classes/${CLASS_CODE}/events`), orderBy("dateTime"));
     const querySnapshot = await getDocs(q);
 
     let upcomingEvents = [];
@@ -801,7 +857,7 @@ async function loadEvents() {
         // Event is MORE than 1 day old, auto-delete it.
         console.log(`Auto-deleting event older than 24h: ${event.title}`);
         // This is "fire and forget" - we don't wait for it to finish.
-        deleteDoc(doc(db, "events", eventId))
+        deleteDoc(doc(db, `classes/${CLASS_CODE}/events`, eventId))
           .catch(err => console.error("Error auto-deleting event:", eventId, err));
 
       } else if (eventDate < now) {
@@ -1049,7 +1105,7 @@ async function deleteEvent(eventId) {
   if (!confirmDelete) return;
 
   try {
-    await deleteDoc(doc(db, "events", eventId));
+    await deleteDoc(doc(db, `classes/${CLASS_CODE}/events`, eventId));
     alert("✅ Event deleted successfully!");
     loadEvents();
   } catch (error) {
