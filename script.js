@@ -35,16 +35,16 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 // ImgBB API Key
-const IMGBB_API_KEY = '24c5da3422541230cb24e662b047a2b4';
+const IMGBB_API_KEY = 'IMGBB_API_KEY';
 
 // --- Firebase Config ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCbR8QP9T6VMHxUuoggj9QtGo1miS81yC4",
+  apiKey: "API_KEY",
   authDomain: "se-16b-schedular.firebaseapp.com",
   projectId: "se-16b-schedular",
   storageBucket: "se-16b-schedular.firebasestorage.app",
-  messagingSenderId: "672415806987",
-  appId: "1:672415806987:web:56642840218108baf0790e"
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
 };
 
 // --- Initialize Firebase ---
